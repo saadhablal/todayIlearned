@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TIL Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        // Check for saved theme preference or system preference
+        const theme = localStorage.getItem('theme') || 
+            (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.classList.add(theme);
+    </script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-8">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">TIL Admin Panel</h1>
+                <div class="flex items-center">
+                    <button id="themeToggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                        <svg id="darkIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                        </svg>
+                        <svg id="lightIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <main>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Inspiration Manager</h2>
+                    <div class="flex space-x-2">
+                        <button id="exportInspirationsBtn" class="px-3 py-1 bg-green-100 text-green-700 dark:bg-green-700/30 dark:text-green-300 rounded-md hover:bg-green-200 dark:hover:bg-green-700/50 text-sm">
+                            Export
+                        </button>
+                        <button id="importInspirationsBtn" class="px-3 py-1 bg-blue-100 text-blue-700 dark:bg-blue-700/30 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-700/50 text-sm">
+                            Import
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mb-4 flex flex-col md:flex-row gap-4">
+                    <div class="md:w-1/2">
+                        <label for="adminInspirationFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Filter</label>
+                        <select id="adminInspirationFilter" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200">
+                            <option value="all">All Inspirations</option>
+                            <option value="default">Default Inspirations</option>
+                            <option value="custom">Custom Inspirations</option>
+                            <option value="entries">User Entries</option>
+                        </select>
+                    </div>
+                    <div class="md:w-1/2">
+                        <label for="adminInspirationSearch" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
+                        <input type="text" id="adminInspirationSearch" placeholder="Search inspirations..." class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200">
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <button id="addAdminInspirationBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
+                        Add New Inspiration
+                    </button>
+                </div>
+                
+                <div class="overflow-auto max-h-[60vh]" id="adminInspirationContainer">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Content</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date Added</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700" id="adminInspirationsList">
+                            <!-- Inspirations will be inserted here by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+                <h2 class="text-xl font-semibold mb-4">Statistics</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg">
+                        <h3 class="text-lg font-medium text-indigo-700 dark:text-indigo-300 mb-2">Total Inspirations</h3>
+                        <p class="text-3xl font-bold text-indigo-800 dark:text-indigo-200" id="totalInspirations">0</p>
+                    </div>
+                    <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+                        <h3 class="text-lg font-medium text-purple-700 dark:text-purple-300 mb-2">Custom Inspirations</h3>
+                        <p class="text-3xl font-bold text-purple-800 dark:text-purple-200" id="customInspirations">0</p>
+                    </div>
+                    <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                        <h3 class="text-lg font-medium text-blue-700 dark:text-blue-300 mb-2">Public Entries</h3>
+                        <p class="text-3xl font-bold text-blue-800 dark:text-blue-200" id="publicEntries">0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Advanced Options</h2>
+                <div class="space-y-4">
+                    <div>
+                        <button id="resetDefaultInspirationsBtn" class="px-4 py-2 bg-yellow-100 text-yellow-700 dark:bg-yellow-700/30 dark:text-yellow-300 rounded-md hover:bg-yellow-200 dark:hover:bg-yellow-700/50">
+                            Reset Default Inspirations
+                        </button>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Restore all default inspirations to their original state.</p>
+                    </div>
+                    <div>
+                        <button id="clearAllCustomInspirationsBtn" class="px-4 py-2 bg-red-100 text-red-700 dark:bg-red-700/30 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-700/50">
+                            Clear All Custom Inspirations
+                        </button>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Remove all custom inspirations. This action cannot be undone.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Add/Edit Inspiration Modal -->
+    <div id="adminInspirationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-lg w-full p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-medium" id="adminModalTitle">Add New Inspiration</h2>
+                <button id="closeAdminInspirationModalBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="mb-4">
+                <label for="adminInspirationText" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Inspiration Text</label>
+                <textarea id="adminInspirationText" rows="4" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200" placeholder="Today I learned that..."></textarea>
+            </div>
+            
+            <div class="mb-4">
+                <label for="adminInspirationType" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+                <select id="adminInspirationType" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200">
+                    <option value="default">Default</option>
+                    <option value="custom" selected>Custom</option>
+                </select>
+            </div>
+            
+            <div class="flex justify-end">
+                <button id="saveAdminInspirationBtn" class="px-4 py-2 bg-indigo-600 text-white dark:bg-indigo-500 rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors">
+                    Save Inspiration
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Import Modal -->
+    <div id="importModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-lg w-full p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-medium">Import Inspirations</h2>
+                <button id="closeImportModalBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="mb-4">
+                <label for="importData" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Paste JSON Data</label>
+                <textarea id="importData" rows="8" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200" placeholder='{"inspirations": ["Today I learned...", "Today I learned..."]}' spellcheck="false"></textarea>
+            </div>
+            
+            <div class="flex justify-end">
+                <button id="confirmImportBtn" class="px-4 py-2 bg-indigo-600 text-white dark:bg-indigo-500 rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors">
+                    Import
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-md w-full p-6">
+            <div class="mb-4">
+                <h2 class="text-xl font-medium text-red-600 dark:text-red-400">Confirm Action</h2>
+                <p class="mt-2 text-gray-700 dark:text-gray-300" id="confirmationMessage">Are you sure you want to proceed with this action?</p>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <button id="cancelConfirmationBtn" class="px-4 py-2 bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                    Cancel
+                </button>
+                <button id="confirmActionBtn" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="admin.js"></script>
+</body>
+</html>

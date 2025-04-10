@@ -89,6 +89,20 @@ function init() {
     loadTodayEntry();
     updateInspirationSection();
     
+    // Check for edit parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const editId = urlParams.get('edit');
+    if (editId) {
+        const entry = entries.find(e => e.id === editId);
+        if (entry) {
+            selectedDate = entry.date;
+            updateTodayDate();
+            entryContent.value = entry.content;
+            publicEntryCheckbox.checked = entry.isPublic;
+            entryContent.focus();
+        }
+    }
+    
     // Event listeners
     themeToggle.addEventListener('click', toggleTheme);
     saveEntryBtn.addEventListener('click', saveEntry);
@@ -124,6 +138,24 @@ function init() {
     `;
     settingsBtn.addEventListener('click', () => settingsModal.classList.remove('hidden'));
     headerEl.appendChild(settingsBtn);
+    
+    // Add admin link (hidden in DOM)
+    const adminLink = document.createElement('a');
+    adminLink.href = 'admin.html';
+    adminLink.id = 'adminLink';
+    adminLink.style.position = 'absolute';
+    adminLink.style.left = '-9999px';
+    adminLink.style.top = '-9999px';
+    adminLink.setAttribute('aria-hidden', 'true');
+    adminLink.textContent = 'Admin';
+    document.body.appendChild(adminLink);
+    
+    // Add keyboard shortcut for admin panel (Ctrl+Shift+A)
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+            window.location.href = 'admin.html';
+        }
+    });
 }
 
 // Date Utilities
