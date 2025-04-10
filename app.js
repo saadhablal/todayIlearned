@@ -685,9 +685,30 @@ function decryptText(encryptedText, key) {
 function updateInspirationSection() {
     if (!inspirationContent) return;
     
+    // Combine sample inspirations with user's own past entries
+    let possibleInspirations = [...inspirations];
+    
+    // Add user's own entries if they exist (excluding today's entry)
+    if (entries.length > 0) {
+        const today = formatDate(new Date());
+        const pastEntries = entries.filter(entry => entry.date !== today);
+        
+        // Add up to 5 random past entries from the user
+        if (pastEntries.length > 0) {
+            // Shuffle and take up to 5
+            const shuffled = [...pastEntries].sort(() => 0.5 - Math.random());
+            const selectedEntries = shuffled.slice(0, Math.min(5, shuffled.length));
+            
+            // Add user's entries to possible inspirations
+            selectedEntries.forEach(entry => {
+                possibleInspirations.push(entry.content);
+            });
+        }
+    }
+    
     // Get random inspiration
-    const randomIndex = Math.floor(Math.random() * inspirations.length);
-    inspirationContent.textContent = inspirations[randomIndex];
+    const randomIndex = Math.floor(Math.random() * possibleInspirations.length);
+    inspirationContent.textContent = possibleInspirations[randomIndex];
     
     // Add animation
     inspirationContent.classList.add('fade-in');
