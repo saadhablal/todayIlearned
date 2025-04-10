@@ -27,7 +27,6 @@ const closeSettingsBtn = document.getElementById('closeSettingsBtn');
 const inspirationContent = document.getElementById('inspirationContent');
 const refreshInspirationBtn = document.getElementById('refreshInspirationBtn');
 const toggleInspirationBtn = document.getElementById('toggleInspirationBtn');
-const manageInspirationBtn = document.getElementById('manageInspirationBtn');
 const inspirationManagerModal = document.getElementById('inspirationManagerModal');
 const closeInspirationManagerBtn = document.getElementById('closeInspirationManagerBtn');
 const inspirationFilter = document.getElementById('inspirationFilter');
@@ -118,14 +117,13 @@ function init() {
     toggleInspirationBtn.addEventListener('click', toggleInspiration);
     
     // Inspiration Manager event listeners
-    manageInspirationBtn.addEventListener('click', openInspirationManager);
-    closeInspirationManagerBtn.addEventListener('click', closeInspirationManager);
-    inspirationFilter.addEventListener('change', filterInspirations);
-    inspirationSearch.addEventListener('input', filterInspirations);
-    addNewInspirationBtn.addEventListener('click', openAddInspirationModal);
-    closeAddInspirationBtn.addEventListener('click', closeAddInspirationModal);
-    saveNewInspirationBtn.addEventListener('click', saveNewInspiration);
-    saveInspirationChangesBtn.addEventListener('click', saveInspirationChanges);
+    if (closeInspirationManagerBtn) closeInspirationManagerBtn.addEventListener('click', closeInspirationManager);
+    if (inspirationFilter) inspirationFilter.addEventListener('change', filterInspirations);
+    if (inspirationSearch) inspirationSearch.addEventListener('input', filterInspirations);
+    if (addNewInspirationBtn) addNewInspirationBtn.addEventListener('click', openAddInspirationModal);
+    if (closeAddInspirationBtn) closeAddInspirationBtn.addEventListener('click', closeAddInspirationModal);
+    if (saveNewInspirationBtn) saveNewInspirationBtn.addEventListener('click', saveNewInspiration);
+    if (saveInspirationChangesBtn) saveInspirationChangesBtn.addEventListener('click', saveInspirationChanges);
     
     // Settings button in header
     const headerEl = document.querySelector('header');
