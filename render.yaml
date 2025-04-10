@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: today-i-learned
+    runtime: static
+    buildCommand: null
+    staticPublishPath: ./
+    envVars:
+      - key: ENABLE_PRETTY_URLS
+        value: true
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
