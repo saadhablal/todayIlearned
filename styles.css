@@ -303,6 +303,47 @@ textarea {
     left: 100%;
 }
 
+/* Public entry badge */
+.public-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    background-color: rgba(79, 70, 229, 0.1);
+    color: rgb(79, 70, 229);
+    font-weight: 500;
+}
+
+.dark .public-badge {
+    background-color: rgba(79, 70, 229, 0.2);
+    color: rgb(129, 140, 248);
+}
+
+/* Checkbox styling */
+input[type="checkbox"] {
+    cursor: pointer;
+    position: relative;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+}
+
+input[type="checkbox"]:checked {
+    background-color: rgb(79, 70, 229);
+    border-color: rgb(79, 70, 229);
+}
+
+.dark input[type="checkbox"]:checked {
+    background-color: rgb(99, 102, 241);
+    border-color: rgb(99, 102, 241);
+}
+
+input[type="checkbox"] + label {
+    cursor: pointer;
+    user-select: none;
+}
+
 /* Fix focus ring styling */
 .focus\:ring-2:focus {
     box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.5);

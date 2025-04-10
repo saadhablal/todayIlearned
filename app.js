@@ -6,6 +6,7 @@ const darkIcon = document.getElementById('darkIcon');
 const lightIcon = document.getElementById('lightIcon');
 const todayDateEl = document.getElementById('todayDate');
 const entryContent = document.getElementById('entryContent');
+const publicEntryCheckbox = document.getElementById('publicEntry');
 const saveEntryBtn = document.getElementById('saveEntryBtn');
 const entriesList = document.getElementById('entriesList');
 const calendarDays = document.getElementById('calendarDays');
@@ -223,8 +224,10 @@ function loadTodayEntry() {
     const todayEntry = entries.find(entry => entry.date === selectedDate);
     if (todayEntry) {
         entryContent.value = todayEntry.content;
+        publicEntryCheckbox.checked = todayEntry.isPublic || false;
     } else {
         entryContent.value = '';
+        publicEntryCheckbox.checked = false;
     }
 }
 
@@ -250,6 +253,7 @@ function saveEntry() {
     if (existingEntryIndex >= 0) {
         // Update existing entry
         entries[existingEntryIndex].content = content;
+        entries[existingEntryIndex].isPublic = publicEntryCheckbox.checked;
         entries[existingEntryIndex].updatedAt = new Date().toISOString();
     } else {
         // Create new entry
@@ -257,6 +261,7 @@ function saveEntry() {
             id: Date.now().toString(),
             date: selectedDate,
             content: content,
+            isPublic: publicEntryCheckbox.checked,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             decrypted: true
@@ -319,6 +324,7 @@ function renderEntries() {
                 </div>
             </div>
             <div class="mt-2 whitespace-pre-wrap">${entry.content}</div>
+            ${entry.isPublic ? '<div class="text-xs px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-full">Public</div>' : ''}
         `;
         
         entriesList.appendChild(entryCard);
@@ -328,6 +334,7 @@ function renderEntries() {
             selectedDate = entry.date;
             updateTodayDate();
             entryContent.value = entry.content;
+            publicEntryCheckbox.checked = entry.isPublic;
             entryContent.focus();
             
             // Scroll to editor
@@ -656,7 +663,9 @@ function showToast(message, type = 'success') {
     // Remove after 3 seconds
     setTimeout(() => {
         toast.classList.add('fade-out');
-        setTimeout(() => toast.remove(), 300);
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 300);
     }, 3000);
 }
 
@@ -685,18 +694,18 @@ function decryptText(encryptedText, key) {
 function updateInspirationSection() {
     if (!inspirationContent) return;
     
-    // Combine sample inspirations with user's own past entries
+    // Combine sample inspirations with user's own public past entries
     let possibleInspirations = [...inspirations];
     
-    // Add user's own entries if they exist (excluding today's entry)
+    // Add user's own public entries if they exist (excluding today's entry)
     if (entries.length > 0) {
         const today = formatDate(new Date());
-        const pastEntries = entries.filter(entry => entry.date !== today);
+        const publicPastEntries = entries.filter(entry => entry.date !== today && entry.isPublic);
         
-        // Add up to 5 random past entries from the user
-        if (pastEntries.length > 0) {
+        // Add public past entries from the user
+        if (publicPastEntries.length > 0) {
             // Shuffle and take up to 5
-            const shuffled = [...pastEntries].sort(() => 0.5 - Math.random());
+            const shuffled = [...publicPastEntries].sort(() => 0.5 - Math.random());
             const selectedEntries = shuffled.slice(0, Math.min(5, shuffled.length));
             
             // Add user's entries to possible inspirations

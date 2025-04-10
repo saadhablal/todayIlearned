@@ -43,7 +43,11 @@
                     class="w-full p-3 min-h-[150px] bg-gray-50 dark:bg-gray-700/30 border-none rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700 text-gray-800 dark:text-gray-200 placeholder-gray-400 resize-none"
                     placeholder="What did you learn today?"
                 ></textarea>
-                <div class="flex justify-end mt-3">
+                <div class="flex justify-between items-center mt-3">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="publicEntry" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-700 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="publicEntry" class="ml-2 text-sm text-gray-600 dark:text-gray-300">Show in Daily Inspiration</label>
+                    </div>
                     <button 
                         id="saveEntryBtn"
                         class="px-5 py-2 bg-indigo-100 text-indigo-700 dark:bg-indigo-700 dark:text-indigo-100 rounded-md hover:bg-indigo-200 dark:hover:bg-indigo-600 transition-colors font-medium"
