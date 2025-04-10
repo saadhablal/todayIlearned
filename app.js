@@ -27,6 +27,19 @@ const closeSettingsBtn = document.getElementById('closeSettingsBtn');
 const inspirationContent = document.getElementById('inspirationContent');
 const refreshInspirationBtn = document.getElementById('refreshInspirationBtn');
 const toggleInspirationBtn = document.getElementById('toggleInspirationBtn');
+const manageInspirationBtn = document.getElementById('manageInspirationBtn');
+const inspirationManagerModal = document.getElementById('inspirationManagerModal');
+const closeInspirationManagerBtn = document.getElementById('closeInspirationManagerBtn');
+const inspirationFilter = document.getElementById('inspirationFilter');
+const inspirationSearch = document.getElementById('inspirationSearch');
+const defaultInspirationsList = document.getElementById('defaultInspirationsList');
+const userInspirationsList = document.getElementById('userInspirationsList');
+const addNewInspirationBtn = document.getElementById('addNewInspirationBtn');
+const saveInspirationChangesBtn = document.getElementById('saveInspirationChangesBtn');
+const addInspirationModal = document.getElementById('addInspirationModal');
+const closeAddInspirationBtn = document.getElementById('closeAddInspirationBtn');
+const newInspirationText = document.getElementById('newInspirationText');
+const saveNewInspirationBtn = document.getElementById('saveNewInspirationBtn');
 
 // State
 let entries = [];
@@ -39,8 +52,10 @@ let userPreferences = {
     encryptionKey: '',
     streakCount: 0,
     lastEntryDate: null,
-    showInspiration: true
+    showInspiration: true,
+    customInspirations: []
 };
+let editingInspirationId = null;
 
 // Sample inspirations
 const inspirations = [
@@ -88,6 +103,16 @@ function init() {
     refreshInspirationBtn.addEventListener('click', refreshInspiration);
     toggleInspirationBtn.addEventListener('click', toggleInspiration);
     
+    // Inspiration Manager event listeners
+    manageInspirationBtn.addEventListener('click', openInspirationManager);
+    closeInspirationManagerBtn.addEventListener('click', closeInspirationManager);
+    inspirationFilter.addEventListener('change', filterInspirations);
+    inspirationSearch.addEventListener('input', filterInspirations);
+    addNewInspirationBtn.addEventListener('click', openAddInspirationModal);
+    closeAddInspirationBtn.addEventListener('click', closeAddInspirationModal);
+    saveNewInspirationBtn.addEventListener('click', saveNewInspiration);
+    saveInspirationChangesBtn.addEventListener('click', saveInspirationChanges);
+    
     // Settings button in header
     const headerEl = document.querySelector('header');
     const settingsBtn = document.createElement('button');
@@ -125,6 +150,11 @@ function loadUserPreferences() {
     const savedPreferences = localStorage.getItem('tilPreferences');
     if (savedPreferences) {
         userPreferences = JSON.parse(savedPreferences);
+        
+        // Initialize customInspirations if it doesn't exist
+        if (!userPreferences.customInspirations) {
+            userPreferences.customInspirations = [];
+        }
     } else {
         // Check system preference
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -694,8 +724,8 @@ function decryptText(encryptedText, key) {
 function updateInspirationSection() {
     if (!inspirationContent) return;
     
-    // Combine sample inspirations with user's own public past entries
-    let possibleInspirations = [...inspirations];
+    // Combine sample inspirations with user's own public past entries and custom inspirations
+    let possibleInspirations = [...inspirations, ...userPreferences.customInspirations];
     
     // Add user's own public entries if they exist (excluding today's entry)
     if (entries.length > 0) {
@@ -749,6 +779,288 @@ function toggleInspiration() {
     }
     
     saveUserPreferences();
+}
+
+// Inspiration Manager
+function openInspirationManager() {
+    inspirationManagerModal.classList.remove('hidden');
+    renderInspirationLists();
+}
+
+function closeInspirationManager() {
+    inspirationManagerModal.classList.add('hidden');
+}
+
+function renderInspirationLists() {
+    // Render default inspirations
+    defaultInspirationsList.innerHTML = '';
+    inspirations.forEach((inspiration, index) => {
+        const item = document.createElement('div');
+        item.className = 'p-3 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 flex justify-between items-start';
+        item.innerHTML = `
+            <div class="flex-1 pr-4">
+                <p class="text-gray-800 dark:text-gray-200">${inspiration}</p>
+                <span class="text-xs text-gray-500 dark:text-gray-400">Default inspiration</span>
+            </div>
+            <div class="flex space-x-1">
+                <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1" data-action="edit" data-type="default" data-index="${index}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                    </svg>
+                </button>
+                <button class="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1" data-action="delete" data-type="default" data-index="${index}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        // Add event listeners
+        const editBtn = item.querySelector('[data-action="edit"]');
+        const deleteBtn = item.querySelector('[data-action="delete"]');
+        
+        editBtn.addEventListener('click', () => {
+            editInspiration('default', index);
+        });
+        
+        deleteBtn.addEventListener('click', () => {
+            deleteInspiration('default', index);
+        });
+        
+        defaultInspirationsList.appendChild(item);
+    });
+    
+    // Render custom inspirations
+    userInspirationsList.innerHTML = '';
+    
+    // Add custom inspirations
+    if (userPreferences.customInspirations && userPreferences.customInspirations.length > 0) {
+        userPreferences.customInspirations.forEach((inspiration, index) => {
+            const item = document.createElement('div');
+            item.className = 'p-3 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 flex justify-between items-start';
+            item.innerHTML = `
+                <div class="flex-1 pr-4">
+                    <p class="text-gray-800 dark:text-gray-200">${inspiration}</p>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Custom inspiration</span>
+                </div>
+                <div class="flex space-x-1">
+                    <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1" data-action="edit" data-type="custom" data-index="${index}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                        </svg>
+                    </button>
+                    <button class="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1" data-action="delete" data-type="custom" data-index="${index}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            // Add event listeners
+            const editBtn = item.querySelector('[data-action="edit"]');
+            const deleteBtn = item.querySelector('[data-action="delete"]');
+            
+            editBtn.addEventListener('click', () => {
+                editInspiration('custom', index);
+            });
+            
+            deleteBtn.addEventListener('click', () => {
+                deleteInspiration('custom', index);
+            });
+            
+            userInspirationsList.appendChild(item);
+        });
+    }
+    
+    // Add public entries
+    const publicEntries = entries.filter(entry => entry.isPublic);
+    if (publicEntries.length > 0) {
+        publicEntries.forEach((entry, index) => {
+            const item = document.createElement('div');
+            item.className = 'p-3 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 flex justify-between items-start';
+            item.innerHTML = `
+                <div class="flex-1 pr-4">
+                    <p class="text-gray-800 dark:text-gray-200">${entry.content}</p>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Your entry from ${formatDisplayDate(new Date(entry.date))}</span>
+                </div>
+                <div class="flex space-x-1">
+                    <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1" data-action="edit" data-type="entry" data-index="${index}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                        </svg>
+                    </button>
+                    <button class="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1" data-action="makePrivate" data-type="entry" data-index="${index}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            // Add event listeners
+            const editBtn = item.querySelector('[data-action="edit"]');
+            const makePrivateBtn = item.querySelector('[data-action="makePrivate"]');
+            
+            editBtn.addEventListener('click', () => {
+                editEntry(entry.id);
+            });
+            
+            makePrivateBtn.addEventListener('click', () => {
+                makeEntryPrivate(entry.id);
+            });
+            
+            userInspirationsList.appendChild(item);
+        });
+    }
+    
+    // Show message if no user inspirations
+    if (userInspirationsList.children.length === 0) {
+        const emptyMessage = document.createElement('div');
+        emptyMessage.className = 'text-center text-gray-500 dark:text-gray-400 p-4';
+        emptyMessage.textContent = 'No custom inspirations or public entries yet.';
+        userInspirationsList.appendChild(emptyMessage);
+    }
+    
+    // Apply current filter
+    filterInspirations();
+}
+
+function filterInspirations() {
+    const filterValue = inspirationFilter.value;
+    const searchValue = inspirationSearch.value.toLowerCase();
+    
+    // Filter default inspirations
+    Array.from(defaultInspirationsList.children).forEach(item => {
+        const text = item.querySelector('p').textContent.toLowerCase();
+        const isVisible = 
+            (filterValue === 'all' || filterValue === 'default') && 
+            (searchValue === '' || text.includes(searchValue));
+        
+        item.style.display = isVisible ? 'flex' : 'none';
+    });
+    
+    // Filter user inspirations
+    Array.from(userInspirationsList.children).forEach(item => {
+        const text = item.querySelector('p')?.textContent.toLowerCase() || '';
+        const isCustom = item.querySelector('span')?.textContent.includes('Custom') || false;
+        const isEntry = item.querySelector('span')?.textContent.includes('Your entry') || false;
+        
+        const isVisible = 
+            (filterValue === 'all' || 
+             (filterValue === 'public' && isEntry) || 
+             (filterValue === 'custom' && isCustom)) && 
+            (searchValue === '' || text.includes(searchValue));
+        
+        item.style.display = isVisible ? 'flex' : 'none';
+    });
+}
+
+function editInspiration(type, index) {
+    let text = '';
+    
+    if (type === 'default') {
+        text = inspirations[index];
+        editingInspirationId = { type, index };
+    } else if (type === 'custom') {
+        text = userPreferences.customInspirations[index];
+        editingInspirationId = { type, index };
+    }
+    
+    newInspirationText.value = text;
+    addInspirationModal.classList.remove('hidden');
+}
+
+function deleteInspiration(type, index) {
+    if (type === 'default') {
+        // Create a copy of default inspirations if not already
+        if (!userPreferences.defaultInspirations) {
+            userPreferences.defaultInspirations = [...inspirations];
+        }
+        
+        // Mark as deleted in user preferences
+        userPreferences.defaultInspirations[index] = null;
+    } else if (type === 'custom') {
+        // Remove from custom inspirations
+        userPreferences.customInspirations.splice(index, 1);
+    }
+    
+    saveUserPreferences();
+    renderInspirationLists();
+    updateInspirationSection();
+}
+
+function editEntry(entryId) {
+    const entry = entries.find(e => e.id === entryId);
+    if (entry) {
+        selectedDate = entry.date;
+        updateTodayDate();
+        entryContent.value = entry.content;
+        publicEntryCheckbox.checked = entry.isPublic;
+        entryContent.focus();
+        
+        // Close the inspiration manager
+        closeInspirationManager();
+    }
+}
+
+function makeEntryPrivate(entryId) {
+    const entryIndex = entries.findIndex(e => e.id === entryId);
+    if (entryIndex !== -1) {
+        entries[entryIndex].isPublic = false;
+        saveEntries();
+        renderInspirationLists();
+        updateInspirationSection();
+    }
+}
+
+function openAddInspirationModal() {
+    editingInspirationId = null;
+    newInspirationText.value = '';
+    addInspirationModal.classList.remove('hidden');
+}
+
+function closeAddInspirationModal() {
+    addInspirationModal.classList.add('hidden');
+}
+
+function saveNewInspiration() {
+    const text = newInspirationText.value.trim();
+    if (!text) return;
+    
+    if (editingInspirationId) {
+        // Update existing inspiration
+        if (editingInspirationId.type === 'default') {
+            // Create a copy of default inspirations if not already
+            if (!userPreferences.defaultInspirations) {
+                userPreferences.defaultInspirations = [...inspirations];
+            }
+            
+            userPreferences.defaultInspirations[editingInspirationId.index] = text;
+        } else if (editingInspirationId.type === 'custom') {
+            userPreferences.customInspirations[editingInspirationId.index] = text;
+        }
+    } else {
+        // Add new custom inspiration
+        if (!userPreferences.customInspirations) {
+            userPreferences.customInspirations = [];
+        }
+        
+        userPreferences.customInspirations.push(text);
+    }
+    
+    saveUserPreferences();
+    closeAddInspirationModal();
+    renderInspirationLists();
+    updateInspirationSection();
+}
+
+function saveInspirationChanges() {
+    saveUserPreferences();
+    closeInspirationManager();
+    updateInspirationSection();
+    showToast('Inspiration changes saved successfully!');
 }
 
 // Initialize the app
